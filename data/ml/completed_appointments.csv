@@ -1,0 +1,2 @@
+breed,weight_kg,coat_length,coat_texture,coat_structure,matting_severity,behaviour,service,groomer_experience_years,actual_duration_minutes
+COCKER_SPANIEL,12.50,LONG,WAVY,SINGLE,MODERATE,GOOD,FULL_GROOM_AND_CLIP,2.0,100
