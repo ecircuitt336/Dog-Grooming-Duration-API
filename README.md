@@ -118,66 +118,56 @@ Records the actual grooming duration for a completed appointment.
 
 This data is retained for machine learning and model evaluation.
 
-## Machine Learning
+### Machine Learning
 
-The machine learning task is a **regression problem**.
+The project is being developed with a machine-learning component to estimate dog grooming appointment duration from completed appointment data.
 
-### Features
+The initial ML dataset contains the following features:
 
-The initial model uses:
+* `breed`
+* `weight_kg`
+* `coat_length`
+* `coat_texture`
+* `coat_structure`
+* `matting_severity`
+* `behaviour`
+* `service`
+* `groomer_experience_years`
 
-| Feature            | Type        |
-| ------------------ | ----------- |
-| Breed              | Categorical |
-| Weight             | Numeric     |
-| Coat length        | Categorical |
-| Coat texture       | Categorical |
-| Coat structure     | Categorical |
-| Matting severity   | Categorical |
-| Behaviour          | Categorical |
-| Service            | Categorical |
-| Groomer experience | Numeric     |
+The target variable is:
 
-### Target
+* `actual_duration_minutes`
 
-```text
-actual_duration_minutes
-```
+Only completed appointments with a recorded actual duration are included in the ML dataset.
 
-The target represents the time from when the groomer begins working on the dog until grooming is complete and the dog is waiting for pickup.
+#### Development dataset
 
-### Planned evaluation
+Real-world grooming data is being collected over time. Because a meaningful real dataset is not available yet, a separate synthetic dataset is used during development to build and test the ML pipeline.
 
-The primary evaluation metrics are:
+The synthetic development dataset contains 500 generated appointments and is stored at:
 
-* Mean Absolute Error (MAE)
-* Root Mean Squared Error (RMSE)
-* R²
+`data/ml/synthetic_development_appointments.csv`
 
-The final evaluation methodology will take dataset size into account. In particular, cross-validation may be preferable while the real dataset remains relatively small.
+The synthetic data is generated from the project's existing rules-based duration assumptions with additional random variation to simulate differences between otherwise similar grooming appointments.
 
-## Dataset
+**The synthetic dataset is for development and testing only. Its distribution and any machine-learning performance measured from it should not be interpreted as evidence of real-world model performance.**
 
-Only completed appointments are exported to the initial machine learning dataset.
+The eventual model will be evaluated using real completed grooming appointments as sufficient observations become available.
 
-The ML dataset contains the nine input features and the actual duration:
+#### Current ML development status
 
-```text
-breed
-weight_kg
-coat_length
-coat_texture
-coat_structure
-matting_severity
-behaviour
-service
-groomer_experience_years
-actual_duration_minutes
-```
-
-Customer-identifying information is deliberately excluded from the ML dataset.
-
-Synthetic data may be used during development of the machine learning pipeline. Synthetic data will be clearly separated from real observations and will not be used to make claims about real-world predictive performance.
+* [x] Export completed appointments from PostgreSQL
+* [x] Generate ML-compatible CSV dataset
+* [x] Inspect dataset with pandas
+* [x] Create synthetic development dataset
+* [x] Validate synthetic dataset
+* [ ] Preprocess categorical and numerical features
+* [ ] Train regression model
+* [ ] Evaluate model using MAE, RMSE and R²
+* [ ] Perform error analysis
+* [ ] Evaluate using real-world grooming data
+* [ ] Persist trained model
+* [ ] Integrate model inference with the Java API
 
 ## Technology Stack
 

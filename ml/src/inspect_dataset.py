@@ -1,6 +1,6 @@
 import pandas as pd
 
-csv_path = "data/ml/completed_appointments.csv"
+csv_path = "data/ml/synthetic_development_appointments.csv"
 
 df = pd.read_csv(csv_path)
 
