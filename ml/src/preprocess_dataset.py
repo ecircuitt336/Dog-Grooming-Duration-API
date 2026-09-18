@@ -1,0 +1,121 @@
+import pandas as pd
+
+from sklearn.compose import ColumnTransformer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import root_mean_squared_error
+from sklearn.metrics import r2_score
+
+model = LinearRegression()
+
+csv_path = "data/ml/synthetic_development_appointments.csv"
+
+df = pd.read_csv(csv_path)
+
+target = df["actual_duration_minutes"]
+
+numerical_features = [
+    "weight_kg",
+    "groomer_experience_years"
+]
+
+categorical_features = [
+    "breed",
+    "coat_length",
+    "coat_texture",
+    "coat_structure",
+    "matting_severity",
+    "behaviour",
+    "service"
+]
+
+categorical_encoder = OneHotEncoder(handle_unknown="ignore")
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("categorical", categorical_encoder, categorical_features),
+        ("numerical", "passthrough", numerical_features)
+    ]
+)
+
+features = df.drop(columns=["actual_duration_minutes"])
+
+X_train, X_test, y_train, y_test = train_test_split(
+    features,
+    target,
+    test_size=0.2,
+    random_state=42
+)
+
+X_train_transformed = preprocessor.fit_transform(X_train)
+X_test_transformed = preprocessor.transform(X_test)
+
+model.fit(X_train_transformed, y_train)
+
+predictions = model.predict(X_test_transformed)
+
+for actual, predicted in zip(y_test.head(10), predictions[:10]):
+    print(f"Actual: {actual} minutes | Predicted: {predicted:.1f} minutes")
+
+errors = y_test - predictions
+
+for actual, predicted, error in zip(y_test.head(10), predictions[:10], errors[:10]):
+    print(
+        f"Actual: {actual} | "
+        f"Predicted: {predicted:.1f} | "
+        f"Error: {error:.1f}"
+    )
+
+mean_error = errors.mean()
+print("Mean signed error:", mean_error)
+
+# Typical absolute prediction error
+mae = mean_absolute_error(y_test, predictions)
+
+print("MAE:", mae)
+
+# Error with greater emphasis on larger mistakes
+rmse = root_mean_squared_error(y_test, predictions)
+
+print("RMSE:", rmse)
+
+# Proportion of target variation explained relative to a mean-predition baseline
+r2 = r2_score(y_test, predictions)
+print("R^2:", r2)
+
+error_analysis = pd.DataFrame({
+    "actual": y_test,
+    "predicted": predictions,
+    "error": errors,
+    "absolute_error": abs(errors)
+})
+
+print(error_analysis.head(10))
+
+error_analysis["actual_duration_bin"] = pd.cut(
+    error_analysis["actual"],
+    bins=[0, 90, 150, 210, float("inf")],
+    labels=["Short", "Medium", "Long", "Very Long"]
+)
+
+print(
+    error_analysis.groupby("actual_duration_bin", observed=True)[
+        ["error", "absolute_error"]
+    ].mean()
+)
+
+error_analysis["service"] = X_test["service"].values
+
+print(
+    error_analysis.groupby("service")["absolute_error"]
+    .mean()
+)
+
+error_analysis["behaviour"] = X_test["behaviour"].values
+
+print(
+    error_analysis.groupby("behaviour")["absolute_error"]
+    .mean()
+)
