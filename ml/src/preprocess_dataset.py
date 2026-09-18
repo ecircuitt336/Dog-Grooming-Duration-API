@@ -4,6 +4,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import root_mean_squared_error
 from sklearn.metrics import r2_score
@@ -84,6 +85,48 @@ print("RMSE:", rmse)
 # Proportion of target variation explained relative to a mean-predition baseline
 r2 = r2_score(y_test, predictions)
 print("R^2:", r2)
+
+random_forest_model = RandomForestRegressor(
+    n_estimators=100,
+    random_state=42
+)
+
+random_forest_model.fit(X_train_transformed, y_train)
+
+random_forest_predictions = random_forest_model.predict(X_test_transformed)
+
+random_forest_mae = mean_absolute_error(
+    y_test,
+    random_forest_predictions
+)
+
+random_forest_rmse = root_mean_squared_error(
+    y_test,
+    random_forest_predictions
+)
+
+random_forest_r2 = r2_score(
+    y_test,
+    random_forest_predictions
+)
+
+print("Random Forest MAE:", random_forest_mae)
+print("Random Forest RMSE:", random_forest_rmse)
+print("Random Forest R²:", random_forest_r2)
+
+random_forest_errors = y_test - random_forest_predictions
+random_forest_absolute_errors = abs(random_forest_errors)
+
+for actual, linear_prediction, random_forest_prediction in zip(
+    y_test.head(10),
+    predictions[:10],
+    random_forest_predictions[:10]
+):
+    print(
+        f"Actual: {actual} | "
+        f"Linear Regression: {linear_prediction:.1f} | "
+        f"Random Forest: {random_forest_prediction:.1f}"
+    )
 
 error_analysis = pd.DataFrame({
     "actual": y_test,
