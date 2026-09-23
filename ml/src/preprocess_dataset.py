@@ -2,12 +2,21 @@ import pandas as pd
 
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import root_mean_squared_error
 from sklearn.metrics import r2_score
+
+import numpy as np
+
+kf = KFold(
+    n_splits=5,
+    shuffle=True,
+    random_state=42
+)
 
 model = LinearRegression()
 
@@ -49,6 +58,61 @@ X_train, X_test, y_train, y_test = train_test_split(
     test_size=0.2,
     random_state=42
 )
+
+for fold, (train_indices, validation_indices) in enumerate(kf.split(X_train), start=1):
+    print(
+        f"Fold {fold}: "
+        f"training samples = {len(train_indices)}, "
+        f"validation samples = {len(validation_indices)}"
+    )
+
+cv_mae_scores = []
+
+for fold, (train_indices, validation_indices) in enumerate(
+    kf.split(X_train),
+    start=1
+):
+    X_fold_train = X_train.iloc[train_indices]
+    X_fold_validation = X_train.iloc[validation_indices]
+
+    y_fold_train = y_train.iloc[train_indices]
+    y_fold_validation = y_train.iloc[validation_indices]
+
+    preprocessor_fold = ColumnTransformer(
+        transformers=[
+            ("categorical", OneHotEncoder(handle_unknown="ignore"), categorical_features),
+            ("numerical", "passthrough", numerical_features)
+        ]
+    )
+
+    X_fold_train_transformed = preprocessor_fold.fit_transform(X_fold_train)
+    X_fold_validation_transformed = preprocessor_fold.transform(X_fold_validation)
+
+    model_fold = LinearRegression()
+
+    model_fold.fit(
+        X_fold_train_transformed,
+        y_fold_train
+    )
+
+    fold_predictions = model_fold.predict(
+        X_fold_validation_transformed
+    )
+
+    fold_mae = mean_absolute_error(
+        y_fold_validation,
+        fold_predictions
+    )
+
+    cv_mae_scores.append(fold_mae)
+
+    print(f"Fold {fold} MAE: {fold_mae:.2f}")
+
+mean_cv_mae = np.mean(cv_mae_scores)
+std_cv_mae = np.std(cv_mae_scores)
+
+print("Mean CV MAE:", mean_cv_mae)
+print("CV MAE standard deviation:", std_cv_mae)
 
 X_train_transformed = preprocessor.fit_transform(X_train)
 X_test_transformed = preprocessor.transform(X_test)
