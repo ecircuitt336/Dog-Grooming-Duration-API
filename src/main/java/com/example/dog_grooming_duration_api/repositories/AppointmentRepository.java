@@ -7,10 +7,17 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * This class represents the database-access interface for Appointment objects.
+ * It gives the application a way to save, find, and query appointments.
+ */
 public interface AppointmentRepository extends JpaRepository<Appointment, UUID> {
 
+    // This is a derived query, meaning Spring reads the method name and works out the query automatically.
+    // "Find all appointments where actualDurationMinutes is not null."
     List<Appointment> findByActualDurationMinutesIsNotNull();
 
+    // Custom JPQL query.
     @Query("""
             SELECT
                 b.code AS breed,
@@ -27,5 +34,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
             JOIN a.breed b
             WHERE a.actualDurationMinutes IS NOT NULL
             """)
+
+    // Return only the data wanted as defined in CompletedAppointmentProjection.
     List<CompletedAppointmentProjection> findCompletedAppointmentsForMl();
 }

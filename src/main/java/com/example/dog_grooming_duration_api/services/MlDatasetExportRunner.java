@@ -3,6 +3,10 @@ package com.example.dog_grooming_duration_api.services;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+/**
+ * This class runs MlDatasetExportService if the Spring Boot application starts with --export-ml-dataset.
+ */
+
 @Component
 public class MlDatasetExportRunner implements CommandLineRunner {
 

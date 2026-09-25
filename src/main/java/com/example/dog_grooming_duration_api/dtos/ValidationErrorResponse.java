@@ -2,6 +2,10 @@ package com.example.dog_grooming_duration_api.dtos;
 
 import java.util.Map;
 
+/**
+ * This class defines the shape of the validation error response if the client sends invalid data.
+ */
+
 public class ValidationErrorResponse {
 
     private final String error;

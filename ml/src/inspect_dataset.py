@@ -1,9 +1,10 @@
 import pandas as pd
 
+# Load the dataset
 csv_path = "data/ml/synthetic_development_appointments.csv"
-
 df = pd.read_csv(csv_path)
 
+# Logs of the entire dataset
 print("Shape:")
 print(df.shape)
 

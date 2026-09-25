@@ -11,10 +11,18 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * This class is the global error handler for validation errors.
+ * It catches validation failures from controllers and turns them into the ValidationErrorResponse DTO.
+ */
+
+// RestControllerAdvice means this class contains exception-handling logic that applies across all REST controllers.
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // This method is called when a MethodArgumentNotValidException occurs
     @ExceptionHandler(MethodArgumentNotValidException.class)
+    // ResponseStatus tells Spring to return HTTP 400 Bad Request
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ValidationErrorResponse handleValidationException(MethodArgumentNotValidException exception) {
         var fieldErrors = exception.getBindingResult().getFieldErrors();

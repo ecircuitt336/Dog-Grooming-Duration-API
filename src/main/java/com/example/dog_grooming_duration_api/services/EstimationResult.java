@@ -1,5 +1,9 @@
 package com.example.dog_grooming_duration_api.services;
 
+/**
+ * This class represents a result produced by the duration estimation logic.
+ */
+
 public class EstimationResult {
 
     private Integer estimatedMinutes;

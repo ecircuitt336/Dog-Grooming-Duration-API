@@ -10,6 +10,12 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+/**
+ * This class is responsible for setting out the steps required to create a grooming-duration estimate and record the actual duration once the appointment is completed.
+ */
+
+// Service means that this class is a service component.
+// It is similar to @Component but this represents a bean as well as service-layer logic.
 @Service
 public class EstimateService {
 
@@ -24,6 +30,9 @@ public class EstimateService {
     }
 
     public EstimateResponse createEstimate(EstimateRequest request) {
+        /**
+         * Uses the RulesBasedEstimator to create an initial estimate and stores the appointment in the database.
+         */
         Breed breed = breedRepository.findByCode(request.getBreed())
                 .orElseThrow(() -> new IllegalArgumentException("Unknown breed: " + request.getBreed()));
 
@@ -61,6 +70,9 @@ public class EstimateService {
     }
 
     public void completeAppointment(UUID appointmentId, int actualDurationMinutes) {
+        /**
+         * Marks an appointment as complete and updates it in the database.
+         */
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new IllegalArgumentException("Appointment not found: " + appointmentId));
 

@@ -9,6 +9,10 @@ import java.nio.file.Path;
 import java.util.List;
 import java.nio.file.Files;
 
+/**
+ * This class is responsible for exporting completed appointment data into a CSV file for the ML pipeline.
+ */
+
 @Service
 public class MlDatasetExportService {
 
@@ -25,6 +29,9 @@ public class MlDatasetExportService {
     }
 
     public void exportToCsv(Path outputPath) throws IOException {
+        /**
+         * Exports the CSV to a specific Path.
+         */
         var appointments = getCompletedAppointments();
         var csv = csvWriter.write(appointments);
 

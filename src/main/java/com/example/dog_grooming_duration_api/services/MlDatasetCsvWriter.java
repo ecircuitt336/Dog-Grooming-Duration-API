@@ -5,6 +5,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+/**
+ * This class writes the information about completedAppointments to a CSV file.
+ */
+
 @Component
 public class MlDatasetCsvWriter {
     private static final String HEADER = "breed,weight_kg,coat_length,coat_texture,coat_structure,"

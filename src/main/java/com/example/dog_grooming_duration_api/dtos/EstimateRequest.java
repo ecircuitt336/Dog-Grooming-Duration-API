@@ -9,8 +9,13 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+/**
+ * This class defines the data a client must provide when asking the API for a grooming-duration estimate.
+ */
+
 public class EstimateRequest {
 
+    // Definitions of data that must be provided
     @NotBlank
     private String breed;
 

@@ -6,6 +6,11 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
+/**
+ * The calculation engine for the current V1 estimator.
+ * It takes the dog's characteristics, grooming service, and groomer's experience and applied predefined rules and produces an estimated duration with lower and upper bounds.
+ */
+
 @Component
 public class RulesBasedEstimator {
 
@@ -15,6 +20,7 @@ public class RulesBasedEstimator {
         this.breedClassification = breedClassification;
     }
 
+    // Estimates a dog groom using characteristics and predefined rules, and provides a +/-15% upper and lower bound respectively.
     public EstimationResult estimate(
             Breed breed,
             BigDecimal weightKg,
