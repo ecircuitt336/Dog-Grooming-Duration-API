@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
@@ -46,22 +47,23 @@ categorical_features = [
     "service"
 ]
 
-# Converts categorical features into numerical one-hot encoded columns.
-# handle_unkown means rather than crashing, the encoder ignores any unkown category.
-categorical_encoder = OneHotEncoder(handle_unknown="ignore")
+def create_preprocessor():
+    # Converts categorical features into numerical one-hot encoded columns.
+    # handle_unkown means rather than crashing, the encoder ignores any unkown category.
+    categorical_encoder = OneHotEncoder(handle_unknown="ignore")
 
-# Applies one-hot encoding to categorical features while leaving numerical features unchanged.
-preprocessor = ColumnTransformer(
-    transformers=[
-        ("categorical", categorical_encoder, categorical_features),
-        ("numerical", "passthrough", numerical_features)
-    ]
-)
+    # Applies one-hot encoding to categorical features while leaving numerical features unchanged.
+    return ColumnTransformer(
+        transformers=[
+            ("categorical", categorical_encoder, categorical_features),
+            ("numerical", "passthrough", numerical_features)
+        ]
+    )
 
 # Combines preprocessing and Linear Regression into a single pipeline.
 model_pipeline = Pipeline(
     steps=[
-        ("preprocessor", preprocessor),
+        ("preprocessor", create_preprocessor()),
         ("model", LinearRegression())
     ]
 )
@@ -77,72 +79,23 @@ X_train, X_test, y_train, y_test = train_test_split(
     random_state=42
 )
 
-# Debugging logs to ensure correct size of each split
-for fold, (train_indices, validation_indices) in enumerate(kf.split(X_train), start=1):
-    print(
-        f"Fold {fold}: "
-        f"training samples = {len(train_indices)}, "
-        f"validation samples = {len(validation_indices)}"
-    )
+cv_pipeline = Pipeline(
+    steps=[
+        ("preprocessor", create_preprocessor()),
+        ("model", LinearRegression())
+    ]
+)
 
-# Will be used to store the MAE from each cross-validation fold
-cv_mae_scores = []
+cv_mae_scores = -cross_val_score(
+    cv_pipeline,
+    X_train,
+    y_train,
+    cv=kf,
+    scoring="neg_mean_absolute_error"
+)
 
-for fold, (train_indices, validation_indices) in enumerate(
-    kf.split(X_train),
-    start=1
-):
-    X_fold_train = X_train.iloc[train_indices]
-    X_fold_validation = X_train.iloc[validation_indices]
-
-    y_fold_train = y_train.iloc[train_indices]
-    y_fold_validation = y_train.iloc[validation_indices]
-
-    # Create a fresh pipeline for this fold so preprocessing is fitted only on the fold's training data.
-    fold_pipeline = Pipeline(
-        steps=[
-            (
-                "preprocessor",
-                ColumnTransformer(
-                    transformers=[
-                        (
-                            "categorical",
-                            OneHotEncoder(handle_unknown="ignore"),
-                            categorical_features
-                        ),
-                        (
-                            "numerical",
-                            "passthrough",
-                            numerical_features
-                        )
-                    ]
-                )
-            ),
-            ("model", LinearRegression())
-        ]
-    )
-
-    # Train the model using this fold's training data
-    fold_pipeline.fit(
-        X_fold_train,
-        y_fold_train
-    )
-
-    # Predict durations for data it didn't train on
-    fold_predictions = fold_pipeline.predict(
-        X_fold_validation
-    )
-
-    # Calculate MAE
-    fold_mae = mean_absolute_error(
-        y_fold_validation,
-        fold_predictions
-    )
-
-    # Add the MAE to the list
-    cv_mae_scores.append(fold_mae)
-
-    print(f"Fold {fold} MAE: {fold_mae:.2f}")
+for fold, score in enumerate(cv_mae_scores, start=1):
+    print(f"Fold {fold} MAE: {score:.2f}")
 
 # Calculate mean and standard deviation
 mean_cv_mae = np.mean(cv_mae_scores)
@@ -150,9 +103,6 @@ std_cv_mae = np.std(cv_mae_scores)
 
 print("Mean CV MAE:", mean_cv_mae)
 print("CV MAE standard deviation:", std_cv_mae)
-
-X_train_transformed = preprocessor.fit_transform(X_train)
-X_test_transformed = preprocessor.transform(X_test)
 
 # Trains the final Linear Regression model on all 80% of training data
 model_pipeline.fit(X_train, y_train)
@@ -189,6 +139,20 @@ print("RMSE:", rmse)
 r2 = r2_score(y_test, predictions)
 print("R^2:", r2)
 
+# Random Forest Pipeline
+random_forest_pipeline = Pipeline(
+    steps=[
+        ("preprocessor", create_preprocessor()),
+        (
+            "model",
+            RandomForestRegressor(
+                n_estimators=100,
+                random_state=42
+            )
+        )
+    ]
+)
+
 # Create a Random Forest with 100 decision trees.
 random_forest_model = RandomForestRegressor(
     n_estimators=100,
@@ -196,10 +160,10 @@ random_forest_model = RandomForestRegressor(
 )
 
 # Train the Random Forest
-random_forest_model.fit(X_train_transformed, y_train)
+random_forest_pipeline.fit(X_train, y_train)
 
 # Make predictions
-random_forest_predictions = random_forest_model.predict(X_test_transformed)
+random_forest_predictions = random_forest_pipeline.predict(X_test)
 
 # Get Random Forest metrics
 random_forest_mae = mean_absolute_error(
