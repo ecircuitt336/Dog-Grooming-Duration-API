@@ -1,14 +1,16 @@
 # Dog Grooming Duration API
 
-A REST API for estimating how long a dog grooming appointment will take, using dog characteristics, grooming requirements, service type, and groomer experience.
+A REST API for estimating how long a dog grooming appointment will take based on the dog, the service being provided, and the groomer's experience.
 
-The project combines a **Java/Spring Boot REST API**, **PostgreSQL persistence**, and a **Python machine learning pipeline**. It is being developed as an open-source software engineering and machine learning portfolio project.
+The project is built with **Java, Spring Boot, PostgreSQL and Python**. It started as a rules-based estimator and is being extended to learn from completed grooming appointments.
+
+The project is being developed as an open-source portfolio project, with a focus on building a complete system from data collection through to a working API.
 
 ## Overview
 
-Accurately estimating grooming duration can help independent dog groomers and grooming salons schedule appointments more effectively.
+Estimating how long a grooming appointment will take can help independent groomers and salons plan their schedules.
 
-The API currently provides a rules-based duration estimate using nine input features:
+The API currently takes nine pieces of information:
 
 * Breed
 * Weight
@@ -20,27 +22,25 @@ The API currently provides a rules-based duration estimate using nine input feat
 * Service
 * Groomer experience
 
-Completed appointments record their actual duration. These completed records form the dataset used for the machine learning component.
+It first produces an estimate using a rules-based calculation. Once an appointment has been completed, the actual duration can be recorded.
 
-The machine learning model is being developed to learn from historical grooming observations and eventually replace or complement the initial rules-based estimator.
+Completed appointments are exported as a dataset which can then be analysed in Python. This provides the foundation for eventually replacing or improving the initial rules-based estimator.
 
 ## Current Status
 
-The Java API, PostgreSQL persistence, appointment completion workflow, ML dataset export pipeline, and Python machine learning development workflow are implemented.
+The Java API, PostgreSQL database, appointment completion workflow and dataset export are working.
 
-Real grooming data is currently being collected. Because the initial real-world dataset is small, a separate synthetic dataset is being used to develop and test the machine learning pipeline.
+The Python side of the project is also being developed using a separate synthetic dataset while real grooming data is collected. The current development work covers:
 
-The current synthetic development workflow includes:
-
-* Categorical and numerical feature preprocessing
-* One-hot encoding
-* Linear Regression baseline
-* Random Forest comparison
-* MAE, RMSE and R² evaluation
-* Residual and error analysis
+* Preparing numerical and categorical data
+* One-hot encoding categorical values
+* Linear Regression
+* Random Forest regression
 * Five-fold cross-validation
+* MAE, RMSE and R² evaluation
+* Error analysis
 
-Synthetic results are used to validate the ML development workflow and **are not treated as evidence of real-world model performance**.
+The synthetic dataset is only being used to develop and test the software. Its results should not be taken as evidence of how well the system will perform on real grooming appointments.
 
 ### Roadmap
 
@@ -50,25 +50,26 @@ Synthetic results are used to validate the ML development workflow and **are not
 * [x] Completed appointment dataset export
 * [x] Python dataset inspection
 * [x] Initial data quality checks
-* [x] Synthetic ML development dataset
+* [x] Synthetic development dataset
 * [x] Synthetic dataset validation
-* [x] ML preprocessing
+* [x] Data preprocessing
 * [x] Regression model training
 * [x] Initial model evaluation
 * [x] Error analysis
 * [x] Five-fold cross-validation
+* [x] scikit-learn Pipeline
 * [~] Real-world data collection
-* [ ] Exploratory data analysis on real-world data
-* [ ] ML pipeline refactor using scikit-learn Pipeline
-* [ ] Model comparison and selection using real-world data
-* [ ] Model persistence
+* [ ] Exploratory analysis of real-world data
+* [ ] Model comparison using real-world data
+* [ ] Model selection using real-world data
+* [ ] Save and load trained models
 * [ ] Python inference service
 * [ ] Java/Python integration
 * [ ] Production deployment
 
 ## Architecture
 
-The project separates the application/API layer from the machine learning workflow.
+The project keeps the main API and the Python data work separate.
 
 ```text
                          ┌─────────────────────┐
@@ -93,31 +94,31 @@ The project separates the application/API layer from the machine learning workfl
                                                    │ appointments
                                                    ▼
                                           ┌─────────────────┐
-                                          │    ML Dataset   │
-                                          │      (CSV)      │
+                                          │    CSV Dataset  │
                                           └────────┬────────┘
                                                    │
                                                    ▼
                                           ┌─────────────────┐
-                                          │ Python / pandas │
-                                          │ / scikit-learn  │
+                                          │     Python      │
+                                          │ pandas /        │
+                                          │ scikit-learn   │
                                           └─────────────────┘
 ```
 
-The intended architecture keeps responsibilities separate:
+The responsibilities are currently split as follows:
 
-* **Java/Spring Boot** — API, validation, business logic and persistence
+* **Java/Spring Boot** — REST API, validation, business logic and database access
 * **PostgreSQL** — appointment and breed data
 * **Python** — data analysis, preprocessing, model training and evaluation
-* **scikit-learn** — machine learning implementation
+* **scikit-learn** — data preprocessing, regression models and evaluation
 
-The Python machine learning workflow is currently used for development and evaluation. Model inference will be integrated with the Java API in a later phase.
+The Python work is currently separate from the live API. Connecting the trained model to the API will be handled in a later stage.
 
 ## API
 
 ### `GET /health`
 
-Returns the API health status.
+Returns the current health status of the API.
 
 ### `POST /api/v1/estimates`
 
@@ -129,19 +130,17 @@ The response contains:
 * `lowerBoundMinutes`
 * `upperBoundMinutes`
 
-The current bounds are provisional ±15% estimates and are not statistically validated prediction intervals.
+The current lower and upper bounds are calculated as ±15% of the estimate. These are provisional and have not been statistically validated.
 
 ### `POST /api/v1/appointments/{id}/actual-duration`
 
-Records the actual grooming duration for a completed appointment.
+Records the actual time taken to complete an appointment.
 
-This data is retained for machine learning and model evaluation.
+Completed appointments can then be included in the dataset used for analysis and model development.
 
-## Machine Learning
+## Data
 
-The project is being developed with a machine-learning component to estimate dog grooming appointment duration from completed appointment data.
-
-The initial ML dataset contains the following features:
+The dataset exported from the application contains:
 
 * `breed`
 * `weight_kg`
@@ -152,37 +151,38 @@ The initial ML dataset contains the following features:
 * `behaviour`
 * `service`
 * `groomer_experience_years`
-
-The target variable is:
-
 * `actual_duration_minutes`
 
-Only completed appointments with a recorded actual duration are included in the ML dataset.
+The first nine columns describe the appointment. `actual_duration_minutes` is the value the models are trying to predict.
 
-### Development Dataset
+Only completed appointments with an actual duration are exported.
 
-Real-world grooming data is being collected over time. Because a sufficiently large real dataset is not available yet, a separate synthetic dataset is used during development to build and test the ML pipeline.
+Customer information and other unnecessary appointment details are deliberately excluded from the dataset.
 
-The synthetic development dataset contains **500 generated appointments** and is stored at:
+## Python Development
 
-`data/ml/synthetic_development_appointments.csv`
+Real grooming data is being collected over time. There is currently not enough real data to meaningfully train and evaluate a model, so a separate generated dataset is being used while the Python workflow is developed.
 
-The synthetic data is generated from the project's existing rules-based duration assumptions with additional random variation to simulate differences between otherwise similar grooming appointments.
+The generated dataset contains **500 appointments**:
 
-**The synthetic dataset is for development and testing only. Its distribution and any machine-learning performance measured from it should not be interpreted as evidence of real-world model performance.**
+```text
+data/ml/synthetic_development_appointments.csv
+```
 
-The eventual model will be evaluated using real completed grooming appointments as sufficient observations become available.
+The generated durations are based on the existing rules used by the API, with additional random variation.
+
+This makes the dataset useful for testing the data-processing and model-training code, but it does not represent real grooming appointments.
 
 ### Preprocessing
 
-The current development dataset contains both numerical and categorical features.
+The data contains both numerical and categorical values.
 
-Numerical features:
+Numerical values:
 
 * `weight_kg`
 * `groomer_experience_years`
 
-Categorical features:
+Categorical values:
 
 * `breed`
 * `coat_length`
@@ -192,23 +192,18 @@ Categorical features:
 * `behaviour`
 * `service`
 
-Categorical features are currently encoded using **one-hot encoding**. Unknown categories are configured to be ignored during transformation.
+Categorical values are converted into numerical columns using one-hot encoding.
 
-The preprocessing is currently implemented explicitly using scikit-learn's `ColumnTransformer`. A later step will refactor preprocessing and model training into a scikit-learn `Pipeline` so that the complete transformation and model workflow can be handled consistently during cross-validation and model persistence.
+The preprocessing and model are contained in a scikit-learn `Pipeline`. This means the same preprocessing steps can be applied consistently when training, testing and eventually using the saved model.
 
-### Initial Model Experiments
+### Models
 
-A **Linear Regression** model has been implemented as the initial baseline.
+Two regression models have currently been tested:
 
-On the current 500-row synthetic development dataset, using an 80/20 train/test split:
+* Linear Regression
+* Random Forest Regressor
 
-| Metric | Linear Regression |
-| ------ | ----------------: |
-| MAE    |     11.93 minutes |
-| RMSE   |     15.00 minutes |
-| R²     |            0.9215 |
-
-A **Random Forest Regressor** was also evaluated on the same split:
+Using an 80/20 split of the 500-row synthetic dataset, the results were:
 
 | Metric | Linear Regression | Random Forest |
 | ------ | ----------------: | ------------: |
@@ -216,52 +211,37 @@ A **Random Forest Regressor** was also evaluated on the same split:
 | RMSE   |         15.00 min |     20.02 min |
 | R²     |            0.9215 |        0.8601 |
 
-On this synthetic dataset, Linear Regression produced lower error than the Random Forest model.
+On this particular synthetic dataset, Linear Regression produced smaller errors.
 
-However, this comparison is **not evidence that Linear Regression is the appropriate final production model**. The synthetic target was generated using the project's additive rules-based assumptions, which naturally resemble the structure that a linear model can learn.
+This result should not be used to decide which model will be used by the finished application. The synthetic durations were generated from the project's existing additive rules, so the dataset is naturally suited to a model such as Linear Regression.
+
+The models will be compared again once enough real appointment data has been collected.
 
 ### Cross-Validation
 
-Five-fold cross-validation has also been performed on the training portion of the synthetic dataset.
+Five-fold cross-validation has also been used with the Linear Regression model.
 
-The Linear Regression model produced:
+The results on the synthetic training data were:
 
-* **Mean CV MAE:** 12.19 minutes
-* **CV MAE standard deviation:** 0.50 minutes
+| Fold |       MAE |
+| ---- | --------: |
+| 1    | 11.96 min |
+| 2    | 12.38 min |
+| 3    | 11.42 min |
+| 4    | 12.29 min |
+| 5    | 12.92 min |
 
-The five fold MAE values were:
+Mean MAE:
 
-| Fold |           MAE |
-| ---- | ------------: |
-| 1    | 11.96 minutes |
-| 2    | 12.38 minutes |
-| 3    | 11.42 minutes |
-| 4    | 12.29 minutes |
-| 5    | 12.92 minutes |
+**12.19 minutes**
 
-The relatively small variation between these folds indicates that the result was reasonably consistent across this particular synthetic dataset.
+Standard deviation:
 
-Cross-validation is currently being used to validate the ML development workflow. It does **not** establish expected real-world performance.
+**0.50 minutes**
 
-### Current ML Development Status
+The results were reasonably consistent across the five folds of this particular dataset.
 
-* [x] Export completed appointments from PostgreSQL
-* [x] Generate ML-compatible CSV dataset
-* [x] Inspect dataset with pandas
-* [x] Create synthetic development dataset
-* [x] Validate synthetic dataset
-* [x] Preprocess categorical and numerical features
-* [x] Train Linear Regression baseline
-* [x] Evaluate model using MAE, RMSE and R²
-* [x] Perform residual and error analysis
-* [x] Compare Linear Regression with Random Forest
-* [x] Perform five-fold cross-validation
-* [ ] Refactor preprocessing and model into a scikit-learn Pipeline
-* [ ] Evaluate models using real-world grooming data
-* [ ] Select final model using real-world evidence
-* [ ] Persist trained model
-* [ ] Build Python inference service
-* [ ] Integrate model inference with the Java API
+Again, these numbers are useful for checking that the development workflow behaves as expected, but they do not represent expected performance on real appointments.
 
 ## Technology Stack
 
@@ -275,7 +255,7 @@ Cross-validation is currently being used to validate the ML development workflow
 * Flyway
 * Maven
 
-### Machine Learning
+### Data and modelling
 
 * Python 3.13+
 * pandas
@@ -287,14 +267,14 @@ Cross-validation is currently being used to validate the ML development workflow
 * JUnit
 * Spring Boot Test
 * Mockito
-* PostgreSQL integration testing
+* PostgreSQL integration tests
 
 ## Running Locally
 
 ### Prerequisites
 
 * Java 25
-* Maven or Maven Wrapper
+* Maven or the included Maven Wrapper
 * Python 3.13+
 * PostgreSQL
 
@@ -306,34 +286,39 @@ Create a PostgreSQL database named:
 dog_grooming_duration
 ```
 
-Database configuration is supplied through environment variables rather than committing credentials to the repository.
+Database credentials are supplied through environment variables rather than committed to the repository.
 
-See `.env.example` for the expected configuration.
+See `.env.example` for the required configuration.
 
 ### Python Environment
 
-Create and activate a virtual environment:
+Create a virtual environment:
 
 ```powershell
 python -m venv .venv
+```
+
+Activate it:
+
+```powershell
 .\.venv\Scripts\Activate.ps1
 ```
 
-Install the Python dependencies:
+Install the dependencies:
 
 ```powershell
 pip install -r requirements.txt
 ```
 
-### Run the Application
+### Run the API
 
-The application can be started using the Maven Wrapper:
+Using the Maven Wrapper:
 
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
 
-The API will be available locally on:
+The API will be available at:
 
 ```text
 http://localhost:8080
@@ -341,45 +326,53 @@ http://localhost:8080
 
 ## Testing
 
-The project contains unit, integration, repository, controller, service, validation, and database constraint tests.
+The project contains tests covering areas including:
 
-Tests can be run from IntelliJ IDEA or using the Maven Wrapper.
+* Domain logic
+* Validation
+* Controllers
+* Services
+* Repositories
+* Database constraints
+* Dataset export
+* Integration between the application and PostgreSQL
+
+Tests can be run from IntelliJ IDEA or with the Maven Wrapper.
 
 ## Project Limitations
 
-This project is currently a portfolio and development project rather than a production-ready commercial system.
+This is currently a portfolio and development project rather than a production-ready commercial service.
 
-Important limitations include:
+Some important limitations are:
 
-* The real-world dataset is currently small.
-* Synthetic data is used for ML pipeline development.
-* Synthetic model results do not represent real-world model performance.
-* The initial duration estimator is rules-based.
-* The ±15% estimate bounds have not been statistically validated.
-* The machine learning model has not yet been evaluated on a sufficiently large real-world dataset.
-* Groomer experience is currently recorded as an input but may have limited variation in the initial real-world dataset.
-* Model performance may change as more real grooming observations are collected.
-* The synthetic dataset is based on assumptions defined by the project rather than observations collected from real grooming appointments.
+* The real-world dataset is still small.
+* Generated data is being used to develop the Python workflow.
+* Results from the generated data do not represent real-world performance.
+* The current estimator is based on manually defined rules.
+* The ±15% bounds have not been statistically validated.
+* The models have not yet been tested on a sufficiently large real-world dataset.
+* Groomer experience may have limited variation in the initial real-world data.
+* Model performance may change substantially as more observations are collected.
+* The generated dataset is based on assumptions made during development rather than real grooming observations.
 
-These limitations are intentionally documented rather than presenting development results as evidence of production-level accuracy.
+These limitations are kept explicit so that development results are not presented as production results.
 
-## Future Improvements
+## Future Work
 
-Potential future work includes:
+The main areas of future development are:
 
-* Collecting additional real-world grooming observations
-* Expanding the dataset across different groomers
-* Performing exploratory data analysis on real-world observations
-* Refactoring the ML workflow using scikit-learn Pipelines
-* Training and comparing regression models using real-world data
-* Model selection based on real-world evaluation
-* Model persistence and versioning
-* Python inference service
-* Java-to-Python integration
-* Automated model evaluation
-* CI/CD
-* Containerisation where justified
-* Improved prediction interval methodology
+* Continue collecting real grooming appointments
+* Analyse the real-world dataset
+* Check for missing values and unusual observations
+* Compare different regression models using real data
+* Select a model based on real-world results
+* Save and load the trained model
+* Build a Python service for making predictions
+* Connect the Python service to the Java API
+* Improve the way prediction ranges are calculated
+* Add automated model evaluation
+* Add CI/CD
+* Consider containerisation if it becomes useful
 
 ## Disclaimer
 

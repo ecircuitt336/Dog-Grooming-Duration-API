@@ -1,27 +1,21 @@
 import pandas as pd
+import numpy as np
 
 from sklearn.compose import ColumnTransformer
-from sklearn.model_selection import train_test_split
-from sklearn.model_selection import KFold
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import (
+    train_test_split,
+    KFold,
+    cross_val_score
+)
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error
-from sklearn.metrics import root_mean_squared_error
-from sklearn.metrics import r2_score
-from sklearn.pipeline import Pipeline
-
-import numpy as np
-
-# Configures 5-fold cross-validation.
-# This divides the training data into 5 folds. It runs 5 times, with a different fold being used to validate each time.
-# Shuffle randomises the data before creating the folds
-kf = KFold(
-    n_splits=5,
-    shuffle=True,
-    random_state=42
+from sklearn.metrics import (
+    mean_absolute_error,
+    root_mean_squared_error,
+    r2_score
 )
+from sklearn.pipeline import Pipeline
 
 # Loads the dataset
 csv_path = "data/ml/synthetic_development_appointments.csv"
@@ -29,6 +23,9 @@ df = pd.read_csv(csv_path)
 
 # Target is what the ML model needs to predict
 target = df["actual_duration_minutes"]
+
+# Separates features from the target
+features = df.drop(columns=["actual_duration_minutes"])
 
 # Characteristics that have numerical values
 numerical_features = [
@@ -49,7 +46,7 @@ categorical_features = [
 
 def create_preprocessor():
     # Converts categorical features into numerical one-hot encoded columns.
-    # handle_unkown means rather than crashing, the encoder ignores any unkown category.
+    # handle_unknown="ignore" means rather than crashing, the encoder ignores any unkown category.
     categorical_encoder = OneHotEncoder(handle_unknown="ignore")
 
     # Applies one-hot encoding to categorical features while leaving numerical features unchanged.
@@ -68,14 +65,20 @@ model_pipeline = Pipeline(
     ]
 )
 
-# Separates features from the target
-features = df.drop(columns=["actual_duration_minutes"])
-
 # Splits the dataset into 80% training data and 20% testing data.
 X_train, X_test, y_train, y_test = train_test_split(
     features,
     target,
     test_size=0.2,
+    random_state=42
+)
+
+# Configures 5-fold cross-validation.
+# This divides the training data into 5 folds. It runs 5 times, with a different fold being used to validate each time.
+# Shuffle randomises the data before creating the folds
+kf = KFold(
+    n_splits=5,
+    shuffle=True,
     random_state=42
 )
 
@@ -153,12 +156,6 @@ random_forest_pipeline = Pipeline(
     ]
 )
 
-# Create a Random Forest with 100 decision trees.
-random_forest_model = RandomForestRegressor(
-    n_estimators=100,
-    random_state=42
-)
-
 # Train the Random Forest
 random_forest_pipeline.fit(X_train, y_train)
 
@@ -185,8 +182,28 @@ print("Random Forest MAE:", random_forest_mae)
 print("Random Forest RMSE:", random_forest_rmse)
 print("Random Forest R²:", random_forest_r2)
 
-random_forest_errors = y_test - random_forest_predictions
-random_forest_absolute_errors = abs(random_forest_errors)
+# Comparison table: Linear Regression VS Random forest
+model_comparison = pd.DataFrame({
+    "Model": [
+        "Linear Regression",
+        "Random Forest"
+    ],
+    "MAE": [
+        mae,
+        random_forest_mae
+    ],
+    "RMSE": [
+        rmse,
+        random_forest_rmse
+    ],
+    "R²": [
+        r2,
+        random_forest_r2
+    ]
+})
+
+print("\nModel comparison:")
+print(model_comparison)
 
 # Compare individual predictions for debugging
 for actual, linear_prediction, random_forest_prediction in zip(
