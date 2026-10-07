@@ -16,9 +16,12 @@ from sklearn.metrics import (
     r2_score
 )
 from sklearn.pipeline import Pipeline
+from pathlib import Path
+from model_persistence import save_model
 
 # Loads the dataset
 csv_path = "data/ml/synthetic_development_appointments.csv"
+model_path = Path("data/ml/models/linear_regression_pipeline.joblib")
 df = pd.read_csv(csv_path)
 
 # Target is what the ML model needs to predict
@@ -141,6 +144,9 @@ print("RMSE:", rmse)
 # Proportion of target variation explained relative to a mean-predition baseline
 r2 = r2_score(y_test, predictions)
 print("R^2:", r2)
+
+save_model(model_pipeline, model_path)
+print(f"Model saved to: {model_path}")
 
 # Random Forest Pipeline
 random_forest_pipeline = Pipeline(
